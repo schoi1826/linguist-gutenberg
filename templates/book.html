@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+ 	<head>
+    	<title>Linguist Gutenberg</title>
+  	</head>
+
+  	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+  	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+  	<script>
+  		var bookmark = 0;
+  		var chapters = [];
+  		var index = [];
+
+  		window.onload = function() {
+  			var raw = document.getElementById("text").innerHTML;
+	  		document.getElementById("text").innerHTML = raw.replace(/\n/g, "<br />");
+
+	  		chapters = raw.match(/Chapter [A-Z]*./g) || [];
+	  		for (i = 0; i < chapters.length; i++) {
+	  			window.find(chapters[i]);
+	  			index.push(window.pageYOffset);
+	  		}
+
+	  		var div = document.getElementById("modal-body");
+	  		for (i = 0; i < chapters.length; i++) {
+	  			var e = document.createElement('div');
+	  			e.innerHTML = "<button class='btn btn-link' onmousedown='goto(" + index[i] + ")' data-dismiss='modal'>" + chapters[i] + "</button>";
+	  			div.appendChild(e.firstChild);
+	  		}
+
+	  		goto(localStorage.getItem("resume"));
+  		}
+
+  		window.onscroll = function() {
+  			localStorage.setItem("resume", window.pageYOffset);
+  		}
+
+  		function selection() {
+			if (window.getSelection) { 
+            	selectedText = window.getSelection(); 
+            } else if (document.getSelection) { 
+                selectedText = document.getSelection(); 
+            } else if (document.selection) { 
+                selectedText = document.selection.createRange().text; 
+            } else { return; }
+
+            document.getElementById("word").value = selectedText.toString().toLowerCase();
+		}
+
+		function goto(y) {
+			window.scrollTo(0, y);
+		}
+
+		function setBookmark() {
+			bookmark = window.pageYOffset;
+		}
+
+		function getBookmark() {
+			goto(bookmark);
+		}
+  	</script>
+
+  	<body>
+  		<div class="jumbotron mb-0">
+	    	<h1> {{ title }} </h1>
+	    	<p> {{ author }} </p>
+	    </div>
+
+		<nav class="navbar navbar-expand-sm bg-primary navbar-dark sticky-top" style="margin: 0">
+		    <ul class="navbar-nav">
+		  		<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#index">Chapters</button>
+			  	<div class="modal" id="index" data-backdrop="false">
+			  		<div class="modal-dialog">
+			  			<div class="modal-content">
+			  				<div class="modal-header">
+			  					<h4 class="modal-title">Table of Contents</h4>
+			  					<button type="button" class="close" data-dismiss="modal">&times;</button>
+			  				</div>
+
+			  				<div class="modal-body btn-group-vertical" id="modal-body">
+			  				</div>
+
+						    <div class="modal-footer">
+						    	<button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+						    </div>
+			  			</div>
+			  		</div>
+			  	</div>
+			</ul>
+		    <ul class="navbar-nav ml-auto">
+			    <button class="btn btn-primary" onmousedown="setBookmark()">Bookmark</button>
+			    <button class="btn btn-primary" onmousedown="getBookmark()">Go to bookmark</button>
+			</ul>
+		</nav> 
+
+    	<div class="row container-fluid">
+    		<div class="col-lg-4" style="background-color: lightblue">
+	    		<div class="p-5 text-center pre-scrollable" style="position: sticky; top: 3rem; max-height: 90vh; overflow-y: auto;">
+	    			<p>Highlight/Type a word to lookup its definition from Wiktionary!</p>
+	    			<button class="btn btn-primary" onmousedown="selection()">Define highlighted word</button><br><br>
+	    			<p>OR</p>
+		    		<form action="/book" method="POST">
+		    			<input type="text" class="form-control form-control-lg" id="word" placeholder="Type a word" name="word"><br>
+		    			<button type="submit" class="btn btn-primary btn-lg">Search</button>
+		    		</form><br><br>
+
+		    		{% if word != '' %}
+			    		<div class="card">
+			    			<h4 class="card-header">{{ word }}</h4>
+			    			<div class="card-body">
+				    			<a href="{{ link }}">Definition from Wiktionary</a><br>
+				    			{{ definition["partOfSpeech"] }}<br>
+				    		</div>
+			    			<ul class="list-group">
+				    			{% for def in definition["text"] %}
+				    				<li class="list-group-item">{{ def }}</li>
+				    			{% endfor %}
+				    		</ul>
+			    		</div>
+		    		{% endif %}
+		    	</div>
+	    	</div>
+	    	<div id="text" class="col-lg-8">
+	    		<div class="pl-5">
+	    			{{ text }}
+	    		</div>
+	    	</div>
+	    </div>
+  	</body>
+</html>
